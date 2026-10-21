@@ -1,157 +1,392 @@
-# PDF Studio — Complete Production PDF Manipulation Suite (Phases 1–5)
+# PDF Studio
 
-PDF Studio is a high-performance, minimalist online PDF toolkit designed to integrate with a self-hosted [Stirling-PDF](https://github.com/Stirling-Tools/Stirling-PDF) engine, backed by a server-side Next.js route proxy, embedded SQLite metadata database, and complete user authentication.
+**A Modern, Self-Hosted PDF Processing Platform**
 
----
+A powerful, privacy-focused PDF toolkit built with Next.js and powered by [Stirling-PDF](https://github.com/Stirling-Tools/Stirling-PDF). PDF Studio combines an intuitive interface, secure user authentication, persistent processing history, and a modular architecture to deliver a seamless document-processing experience.
 
-## 🛠 Technology Stack
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS v4" />
+  <img src="https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
+</p>
 
-- **Framework**: Next.js 16 (App Router with Turbopack)
-- **Language**: TypeScript (Strict Mode)
-- **Styling**: Tailwind CSS v4 & custom semantic design tokens
-- **Component Primitives**: Radix UI (`@radix-ui/react-dialog`, `@radix-ui/react-slot`)
-- **Icons**: Lucide React
-- **Animations**: Framer Motion & CSS keyframe transitions
-- **Database**: SQLite with `@libsql/client` (stored in `./data/pdf-studio.db`)
-- **Authentication**: Bcrypt password hashing (`bcryptjs`) & secure session cookies
-- **PDF Engine**: Stirling-PDF container proxy + native high-fidelity fallback (`pdf-lib`)
-- **Theme Management**: `next-themes` (Light, Dark, and System modes)
-- **Notifications**: Sonner
-- **Testing**: Node.js Test Runner with `tsx` (21 automated unit and integration tests)
+<p align="center">
+  <strong>Private by design. Powerful by default. Built for modern document workflows.</strong>
+</p>
 
 ---
 
-## 📂 Project Architecture
+## Overview
 
-```
+PDF Studio is a full-stack PDF manipulation suite designed for users who want convenient document tools without relying on third-party PDF processing services.
+
+The application uses a self-hosted Stirling-PDF engine for document operations, with a server-side Next.js API layer that handles requests between the frontend and processing engine. SQLite stores account information, session metadata, and processing history.
+
+The platform is organized around a responsive dashboard, dedicated tool workspaces, and reusable UI components, making it straightforward to maintain and extend.
+
+## Features
+
+### Document Processing
+
+- **Merge PDF** — Combine multiple documents in a custom order.
+- **Split PDF** — Extract pages using configurable page ranges.
+- **Rotate PDF** — Rotate document pages in 90°, 180°, or 270° increments.
+- **PDF to Word** — Convert PDFs into editable Word documents.
+- **Image to PDF** — Combine images into a single PDF with configurable layout options.
+- **Compress PDF** — Reduce document size using supported compression settings.
+- **Add Password** — Protect PDF documents with password-based encryption.
+- **OCR PDF** — Recognize text in scanned documents using supported OCR languages.
+
+### User Experience
+
+- Clean, responsive dashboard with categorized tool discovery.
+- Instant search and keyboard-accessible command palette.
+- Drag-and-drop uploads with file validation and reordering.
+- Dedicated processing workspaces with configurable options.
+- Processing status, actionable error messages, and file downloads.
+- Light, dark, and system theme support.
+- Responsive navigation and accessible interface primitives.
+
+### Accounts & History
+
+- User registration and sign-in.
+- Bcrypt password hashing.
+- Secure session-cookie management.
+- User-specific document-processing history.
+- Account management and session overview.
+- History inspection and deletion controls.
+
+### Infrastructure & Reliability
+
+- Self-hosted Stirling-PDF integration.
+- Server-side API proxy to isolate the processing engine from browser requests.
+- SQLite-backed application metadata.
+- Validated tool parameters and normalized errors.
+- Native PDF processing fallbacks for selected operations.
+- Automated unit and integration tests.
+- Docker-based deployment for the web application and PDF engine.
+
+> **Privacy note:** PDF processing is self-hostable, but privacy depends on your deployment, logging, storage, and retention configuration. Review these settings before handling sensitive documents.
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 — App Router |
+| Language | TypeScript — Strict Mode |
+| Styling | Tailwind CSS v4 |
+| UI primitives | Radix UI |
+| Icons | Lucide React |
+| Motion | Framer Motion and CSS transitions |
+| Database | SQLite with `@libsql/client` |
+| Authentication | `bcryptjs` and secure session cookies |
+| PDF processing | Stirling-PDF and `pdf-lib` fallbacks |
+| Theme management | `next-themes` |
+| Notifications | Sonner |
+| Validation | Zod |
+| Testing | Node.js Test Runner and `tsx` |
+| Deployment | Docker and Docker Compose |
+
+---
+
+## Project Architecture
+
+The codebase separates application routes, reusable interface components, configuration, authentication, database access, and PDF processing logic.
+
+```text
+pdf-studio/
 ├── app/
-│   ├── globals.css              # Centralized theme tokens & animations
-│   ├── layout.tsx               # Root layout with ThemeProvider, Navbar, Footer, Sonner
-│   ├── page.tsx                 # Dashboard homepage (Hero + interactive DashboardView)
-│   ├── not-found.tsx            # Accessible 404 handler for invalid routes/slugs
-│   ├── login/page.tsx           # User sign-in interface
-│   ├── register/page.tsx        # User registration interface
-│   ├── account/page.tsx         # User profile, session overview, and sign-out
-│   ├── history/page.tsx         # Document processing metadata logs & deletion controls
-│   ├── help/page.tsx            # Technical FAQ and architectural overview
-│   ├── privacy/page.tsx         # Data handling boundaries & retention policy
-│   ├── terms/page.tsx           # Terms of use
 │   ├── api/
 │   │   ├── auth/
-│   │   │   ├── login/route.ts    # Sign-in endpoint with session issuance
-│   │   │   ├── logout/route.ts   # Session invalidation endpoint
-│   │   │   ├── me/route.ts       # Active session verification endpoint
-│   │   │   └── register/route.ts # Registration with bcrypt hashing
-│   │   ├── health/route.ts       # Web app and Stirling-PDF health check
-│   │   ├── history/route.ts      # Authenticated user history queries
-│   │   └── tools/[slug]/route.ts # Universal Stirling-PDF proxy & processor
-│   └── tools/[slug]/page.tsx    # Tool workspace shell with static pre-generation
+│   │   │   ├── login/route.ts
+│   │   │   ├── logout/route.ts
+│   │   │   ├── me/route.ts
+│   │   │   └── register/route.ts
+│   │   ├── health/route.ts
+│   │   ├── history/route.ts
+│   │   └── tools/[slug]/route.ts
+│   ├── account/page.tsx
+│   ├── help/page.tsx
+│   ├── history/page.tsx
+│   ├── login/page.tsx
+│   ├── privacy/page.tsx
+│   ├── register/page.tsx
+│   ├── terms/page.tsx
+│   ├── tools/[slug]/page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── not-found.tsx
+│   └── page.tsx
 ├── components/
 │   ├── dashboard/
-│   │   ├── category-nav.tsx     # Category filter buttons with tool counts
-│   │   ├── category-section.tsx # Categorized section grids
-│   │   ├── dashboard-view.tsx   # Instant search, category tabs, and grid coordinator
-│   │   ├── hero.tsx             # Homepage hero section with primary/secondary CTAs
-│   │   ├── search-modal.tsx     # Accessible command palette (⌘K / Ctrl+K)
-│   │   ├── tool-card.tsx        # Unified tool card with semantic links
-│   │   └── tool-grid.tsx        # Responsive multi-column layout grid (1 to 4 columns)
+│   │   ├── category-nav.tsx
+│   │   ├── category-section.tsx
+│   │   ├── dashboard-view.tsx
+│   │   ├── hero.tsx
+│   │   ├── search-modal.tsx
+│   │   ├── tool-card.tsx
+│   │   └── tool-grid.tsx
 │   ├── layout/
-│   │   ├── footer.tsx           # Footer with category anchors and reference links
-│   │   ├── mobile-nav.tsx       # Accessible mobile drawer with focus trap and scroll lock
-│   │   ├── navbar.tsx           # Sticky navbar with dynamic user avatar and search trigger
-│   │   ├── theme-provider.tsx   # next-themes provider
-│   │   └── theme-toggle.tsx     # Hydration-safe light/dark toggle (useSyncExternalStore)
+│   │   ├── footer.tsx
+│   │   ├── mobile-nav.tsx
+│   │   ├── navbar.tsx
+│   │   ├── theme-provider.tsx
+│   │   └── theme-toggle.tsx
 │   ├── tools/
-│   │   ├── file-uploader.tsx    # Drag-drop uploader with file reordering and validation
-│   │   ├── processing-state.tsx # Indeterminate progress, error recovery, and download button
-│   │   ├── tool-page-layout.tsx # Reusable tool page shell with breadcrumbs
-│   │   └── tool-workspace.tsx   # Master workflow client component for all 8 tools
+│   │   ├── file-uploader.tsx
+│   │   ├── processing-state.tsx
+│   │   ├── tool-page-layout.tsx
+│   │   └── tool-workspace.tsx
 │   └── ui/
-│       ├── badge.tsx            # Categorical badges
-│       ├── button.tsx           # Polymorphic accessible button with variants
-│       ├── dialog.tsx           # Radix UI dialog primitive
-│       ├── input.tsx            # Styled input field
-│       └── tool-icon.tsx        # Lucide icon registry mapper
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── dialog.tsx
+│       ├── input.tsx
+│       └── tool-icon.tsx
 ├── config/
-│   ├── site.ts                  # Site metadata and navigation links
-│   └── tools.ts                 # Strongly typed tool registry & category catalog
+│   ├── site.ts
+│   └── tools.ts
 ├── lib/
 │   ├── auth/
-│   │   ├── password.ts          # Bcrypt password hashing & verification
-│   │   └── session.ts           # Cookie session issuance and verification
+│   │   ├── password.ts
+│   │   └── session.ts
 │   ├── db/
-│   │   └── index.ts             # SQLite schema, tables, migrations, and queries
+│   │   └── index.ts
 │   ├── stirling/
-│   │   ├── client.ts            # StirlingClient HTTP proxy with native fallback
-│   │   ├── download.ts          # Filename sanitization & safe Blob download trigger
-│   │   ├── endpoints.ts         # Verified Stirling-PDF API endpoint configurations
-│   │   ├── errors.ts            # Typed error classes & safe error normalizer
-│   │   ├── native-fallback.ts   # Native PDF processing (Merge, Rotate, Split, Compress)
-│   │   └── schemas.ts           # Zod parameter validation schemas
-│   └── utils.ts                 # Class name merger (clsx + tailwind-merge)
+│   │   ├── client.ts
+│   │   ├── download.ts
+│   │   ├── endpoints.ts
+│   │   ├── errors.ts
+│   │   ├── native-fallback.ts
+│   │   └── schemas.ts
+│   └── utils.ts
 ├── tests/
 │   ├── integration/
-│   │   └── api-tools.test.ts    # End-to-end PDF operations & tool integration tests
+│   │   └── api-tools.test.ts
 │   └── unit/
-│       ├── auth-db.test.ts      # Database queries, bcrypt, and user history isolation tests
-│       ├── stirling-client.test.ts # Endpoints, schemas, filenames, and error tests
-│       └── tools.test.ts        # Tool catalog and category order verification
-├── Dockerfile                   # Production multi-stage Dockerfile
-├── docker-compose.yml           # Full-stack composition (Web + Stirling-PDF)
-├── DEPLOYMENT.md                # Deployment instructions and environment guide
-└── package.json
+│       ├── auth-db.test.ts
+│       ├── stirling-client.test.ts
+│       └── tools.test.ts
+├── data/
+│   └── .gitkeep
+├── Dockerfile
+├── docker-compose.yml
+├── DEPLOYMENT.md
+├── package.json
+└── README.md
 ```
 
----
-
-## 📋 Complete Tool Catalog & Operational Endpoints
-
-All 8 tools feature end-to-end processing, validation, options panels, progress states, and downloads:
-
-| # | Tool | Slug | Category | Stirling Endpoint | Supported Options |
-|---|---|---|---|---|---|
-| 1 | **Merge PDF** | `merge-pdf` | Organize | `/api/v1/general/merge-pdfs` | Multi-file reordering, sequence preservation |
-| 2 | **Split PDF** | `split-pdf` | Organize | `/api/v1/general/split-pages` | Custom page ranges (e.g. `1-3, 5`), presets |
-| 3 | **Rotate PDF** | `rotate-pdf` | Organize | `/api/v1/general/rotate-pdf` | 90°, 180°, 270° clockwise rotation |
-| 4 | **PDF to Word** | `pdf-to-word` | Convert | `/api/v1/convert/pdf/word` | High-fidelity `.docx` conversion |
-| 5 | **Image to PDF** | `image-to-pdf` | Convert | `/api/v1/convert/img/pdf` | Multi-image reordering, layout fit options |
-| 6 | **Compress PDF** | `compress-pdf` | Optimize | `/api/v1/misc/compress-pdf` | Low, Medium, High compression levels |
-| 7 | **Add Password** | `add-password` | Security | `/api/v1/security/add-password` | AES-256 / 128-bit password encryption |
-| 8 | **OCR PDF** | `ocr-pdf` | OCR | `/api/v1/misc/ocr-pdf` | Language recognition (`eng`, `spa`, etc.), sidecar |
+*Architecture reflects the documented project structure. Update this tree as files are added, removed, or renamed.*
 
 ---
 
-## 🚀 Commands & Execution
+## PDF Tool Catalog
+
+| Tool | Category | Endpoint |
+|---|---|---|
+| Merge PDF | Organize | `/api/v1/general/merge-pdfs` |
+| Split PDF | Organize | `/api/v1/general/split-pages` |
+| Rotate PDF | Organize | `/api/v1/general/rotate-pdf` |
+| PDF to Word | Convert | `/api/v1/convert/pdf/word` |
+| Image to PDF | Convert | `/api/v1/convert/img/pdf` |
+| Compress PDF | Optimize | `/api/v1/misc/compress-pdf` |
+| Add Password | Security | `/api/v1/security/add-password` |
+| OCR PDF | OCR | `/api/v1/misc/ocr-pdf` |
+
+**Processing workflow**
+
+1. Select a tool from the dashboard.
+2. Upload and validate the required files.
+3. Configure the available processing options.
+4. Submit the request to the Next.js API.
+5. Process the document through Stirling-PDF or an explicitly supported native fallback.
+6. Receive the resulting file and download it.
+7. Record eligible processing metadata in the authenticated user's history.
+
+**Endpoint compatibility:** Verify every endpoint, HTTP method, multipart field, option name, and response format against the exact Stirling-PDF version deployed. API paths and parameters can change between releases.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js version supported by your installed Next.js release.
+- npm.
+- Docker and Docker Compose for the containerized deployment.
+- A configured Stirling-PDF instance.
+
+### 1. Clone the repository
 
 ```bash
-# 1. Install dependencies
+git clone <your-repository-url>
+cd pdf-studio
+```
+
+Replace `<your-repository-url>` with your actual repository URL.
+
+### 2. Install dependencies
+
+```bash
 npm install
+```
 
-# 2. Run automated test suite (21 unit and integration tests)
-npm test
+### 3. Configure environment variables
 
-# 3. Run code quality & linting
-npm run lint
+Create a local `.env` file using the variable names expected by your application and deployment configuration.
 
-# 4. Compile optimized production build
-npm run build
+For example, your deployment may need settings for:
 
-# 5. Start production server
-npm start
+```dotenv
+NODE_ENV=development
+STIRLING_PDF_URL=http://localhost:8080
+DATABASE_URL=file:./data/pdf-studio.db
+```
 
-# 6. Start development server
+These are illustrative values, not a guarantee of the exact environment-variable names supported by your implementation. Check `lib/db/index.ts`, `lib/stirling/client.ts`, and `docker-compose.yml` before configuring the environment.
+
+Keep credentials, session secrets, and other sensitive values out of version control.
+
+### 4. Start the development server
+
+```bash
 npm run dev
 ```
 
----
+Open [http://localhost:3000](http://localhost:3000).
 
-## 🐳 Docker Deployment
-
-To launch both PDF Studio and the Stirling-PDF Docker container with private networking:
+### 5. Run quality checks
 
 ```bash
-docker-compose up -d --build
+npm test
+npm run lint
+npm run build
 ```
-- Web Application: `http://localhost:3000`
-- Stirling-PDF Engine: `http://localhost:8080` (internally accessed at `http://stirling-pdf:8080`)
-- Health endpoint: `http://localhost:3000/api/health`
+
+Run each command independently and resolve any failures before deploying.
+
+### 6. Start the production server
+
+```bash
+npm run build
+npm start
+```
+
+---
+
+## Docker Deployment
+
+PDF Studio can be deployed alongside Stirling-PDF using Docker Compose.
+
+```bash
+docker compose up -d --build
+```
+
+Inspect the running services:
+
+```bash
+docker compose ps
+docker compose logs -f
+```
+
+### Service Overview
+
+| Service | Address | Purpose |
+|---|---|---|
+| PDF Studio | `http://localhost:3000` | Web application and API |
+| Stirling-PDF | `http://localhost:8080` | PDF processing engine |
+| Health endpoint | `http://localhost:3000/api/health` | Application and engine status |
+
+Inside the Docker network, the web application should access the processing engine using its service name, such as `http://stirling-pdf:8080`, if that matches the service defined in your Compose configuration.
+
+For production deployments, prefer private container networking for Stirling-PDF and avoid publishing its port publicly unless required. Configure persistent volumes, secrets, resource limits, and health checks according to your environment.
+
+For additional configuration, see [`DEPLOYMENT.md`](DEPLOYMENT.md).
+
+---
+
+## Testing & Quality Assurance
+
+The project includes a documented suite of 21 automated unit and integration tests covering areas such as:
+
+- Authentication and database operations.
+- Password verification and user-history isolation.
+- PDF endpoint configurations and parameter validation.
+- Filename handling and error normalization.
+- Tool catalog consistency.
+- PDF processing API integration.
+
+Run the suite with:
+
+```bash
+npm test
+```
+
+Test coverage and passing status should be confirmed against the current repository and CI results; the documented test count alone does not establish that every test passes.
+
+---
+
+## Security & Privacy
+
+Security is part of the application architecture, not an optional enhancement.
+
+- **Password security:** Hash passwords using bcrypt; never store plaintext passwords.
+- **Session management:** Use appropriately protected, expiring session cookies and invalidate sessions on logout.
+- **Access control:** Enforce authentication and per-user authorization on protected API routes.
+- **Input validation:** Validate file types, file sizes, tool parameters, and page ranges on the server.
+- **Upload handling:** Enforce request limits and avoid trusting client-supplied filenames or MIME types.
+- **PDF engine isolation:** Keep the processing service on a private network wherever possible.
+- **Data retention:** Define clear retention rules for processing metadata, temporary files, and logs.
+- **Database protection:** Keep database files outside public static directories and restrict filesystem access.
+- **Production configuration:** Use HTTPS, secure cookie settings, rate limiting, and properly managed secrets.
+
+PDFs can contain sensitive information. Review temporary-file cleanup, server logs, backups, and the behavior of external OCR or conversion dependencies before processing confidential documents.
+
+---
+
+## Roadmap
+
+Potential areas for future development include:
+
+- Additional PDF manipulation and conversion tools.
+- Batch processing and multi-file job management.
+- Improved document previews.
+- Configurable upload and processing limits.
+- Administrative controls and operational metrics.
+- Expanded accessibility and localization.
+- CI workflows for linting, tests, and production builds.
+- Advanced processing queues for resource-intensive operations.
+
+These are possible extensions, not claims that the features are already implemented.
+
+---
+
+## Contributing
+
+Contributions, bug reports, and practical improvements are welcome.
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Implement your changes with consistent TypeScript conventions.
+4. Add or update tests where appropriate.
+5. Run the test, lint, and build commands.
+6. Open a pull request describing the changes and verification performed.
+
+For larger changes, open an issue first to discuss the proposed approach.
+
+---
+
+## License
+
+Add the license applicable to your repository here. If this project is distributed publicly, include the appropriate `LICENSE` file and preserve applicable third-party notices.
+
+---
+
+<p align="center">
+  <strong>PDF Studio</strong><br />
+  A cleaner, more private way to work with PDF documents.
+</p>
