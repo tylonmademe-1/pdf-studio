@@ -20,6 +20,15 @@
 # production
 /build
 
+# databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+data/*.db
+data/*.sqlite*
+!data/.gitkeep
+
 # misc
 .DS_Store
 *.pem

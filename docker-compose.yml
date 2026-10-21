@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdf_studio_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - STIRLING_PDF_URL=http://stirling-pdf:8080
+      - STIRLING_PDF_API_KEY=${STIRLING_PDF_API_KEY:-}
+      - DATABASE_URL=file:/app/data/pdf-studio.db
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+    volumes:
+      - pdf_studio_data:/app/data
+    depends_on:
+      stirling-pdf:
+        condition: service_healthy
+    networks:
+      - pdf_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  stirling-pdf:
+    image: frooodle/s-pdf:latest
+    container_name: stirling_pdf_engine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - LANGS=en_GB,en_US
+    volumes:
+      - stirling_trainingData:/usr/share/tessdata
+      - stirling_extraConfigs:/configs
+      - stirling_logs:/logs
+    networks:
+      - pdf_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/info/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  pdf_studio_data:
+  stirling_trainingData:
+  stirling_extraConfigs:
+  stirling_logs:
+
+networks:
+  pdf_network:
+    driver: bridge
