@@ -7,10 +7,15 @@ let dbInstance: Client | null = null;
 export function getDb(): Client {
   if (dbInstance) return dbInstance;
 
-  const dbUrl = process.env.DATABASE_URL || `file:${path.resolve(process.cwd(), "data", "pdf-studio.db")}`;
+  const defaultDbPath = process.env.VERCEL
+    ? "file:/tmp/pdf-studio.db"
+    : `file:${path.resolve(process.cwd(), "data", "pdf-studio.db")}`;
+
+  const dbUrl = process.env.DATABASE_URL || defaultDbPath;
 
   dbInstance = createClient({
     url: dbUrl,
+    authToken: process.env.DATABASE_AUTH_TOKEN,
   });
 
   return dbInstance;
